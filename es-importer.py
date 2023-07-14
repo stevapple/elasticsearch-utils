@@ -110,7 +110,7 @@ async def process_file(file_path: str, file_encoding: str, index: str, es: Async
             await send_data(processed_data, index, pipeline, es)
 
 async def main(file_path: str, file_encoding: str, index: str, host: str, port: int, username: str = None, password: str = None, use_ssl: bool = True, ca_cert: str = None, generate_action: bool = False, id_field: str = None, pipeline: str = None, chunk_size: int = 1000, dry_run: bool = False) -> None:
-    if (username is None and password is not None) or (username is not None and password is None):
+    if username is not 'elastic' and password is not None:
         raise ValueError("Username and password must be provided together.")
 
     if id_field is not None and not generate_action:
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument('--file-encoding', default='utf-8', help='Input file encoding (default: utf-8)')
     parser.add_argument('--host', default='localhost', help='Elasticsearch host (default: localhost)')
     parser.add_argument('--port', default=9200, type=int, help='Elasticsearch port (default: 9200)')
-    parser.add_argument('-u', '--username', default=None, help='Username for authentication')
+    parser.add_argument('-u', '--username', default='elastic', help='Username for authentication (default: elastic)')
     parser.add_argument('-p', '--password', default=None, help='Password for authentication')
     parser.add_argument('--insecure', action='store_true', help='Use plain HTTP instead of HTTPS')
     parser.add_argument('--ca-cert', default=None, help='Path to the CA certificate file')
