@@ -68,7 +68,7 @@ async def process_results(results: AsyncIterator[dict], post_process: str, encod
 async def main(query_file: str, post_process: str, output_file: str, full: bool, encoding: str,
                host: str, port: int, username: str, password: str, use_ssl: bool, ca_cert: str,
                chunk_size: int, index: str = None) -> None:
-    if (username is None and password is not None) or (username is not None and password is None):
+    if username is not 'elastic' and password is not None:
         raise ValueError("Username and password must be provided together.")
 
     if ca_cert is not None and not use_ssl:
@@ -90,19 +90,19 @@ async def main(query_file: str, post_process: str, output_file: str, full: bool,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Query, process and save data from Elasticsearch')
-    parser.add_argument('query_file', help='Path to the query file. Use - for stdin.')
-    parser.add_argument('--post-process', help='Specify a command for post-processing each document')
-    parser.add_argument('-o', '--out', help='Specify the output file')
+    parser.add_argument('query_file', type=str, help='Path to the query file. Use - for stdin.')
+    parser.add_argument('--post-process', default=None, type=str, help='Specify a command for post-processing each document')
+    parser.add_argument('-o', '--out', default=None, type=str, help='Specify the output file')
     parser.add_argument('--full', action='store_true', help='Include the full document')
     parser.add_argument('--file-encoding', default='utf-8', help='Specify the encoding for file output')
     parser.add_argument('--host', default='localhost', help='Elasticsearch host (default: localhost)')
-    parser.add_argument('--port', default=9200, type=int, help='Elasticsearch port (default: 9200)')
-    parser.add_argument('-u', '--username', default=None, help='Username for authentication')
-    parser.add_argument('-p', '--password', default=None, help='Password for authentication')
+    parser.add_argument('--port', default=9200, help='Elasticsearch port (default: 9200)')
+    parser.add_argument('-u', '--username', default='elastic', help='Username for authentication')
+    parser.add_argument('-p', '--password', default=None, type=str, help='Password for authentication')
     parser.add_argument('--insecure', action='store_true', help='Use plain HTTP instead of HTTPS')
-    parser.add_argument('--ca-cert', default=None, help='Path to the CA certificate file')
-    parser.add_argument('--chunk-size', type=int, default=1000, help='Number of documents to process at once (default: 1000)')
-    parser.add_argument('-i', '--index', help='Specify the Elasticsearch index', default=None)
+    parser.add_argument('--ca-cert', default=None, type=str, help='Path to the CA certificate file')
+    parser.add_argument('--chunk-size', default=1000, help='Number of documents to process at once (default: 1000)')
+    parser.add_argument('-i', '--index', default=None, type=str, help='Specify the Elasticsearch index')
     args = parser.parse_args()
 
     asyncio.run(main(
