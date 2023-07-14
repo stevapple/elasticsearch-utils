@@ -109,7 +109,7 @@ async def process_file(file_path: str, file_encoding: str, index: str, es: Async
         else:
             await send_data(processed_data, index, pipeline, es)
 
-async def main(file_path: str, file_encoding: str, index: str, host: str, port: int, username: str = None, password: str = None, ca_cert: str = None, generate_action: bool = False, id_field: str = None, pipeline: str = None, chunk_size: int = 1000, dry_run: bool = False) -> None:
+async def main(file_path: str, file_encoding: str, index: str, host: str, port: int, username: str = None, password: str = None, use_ssl: bool = True, ca_cert: str = None, generate_action: bool = False, id_field: str = None, pipeline: str = None, chunk_size: int = 1000, dry_run: bool = False) -> None:
     if (username is None and password is not None) or (username is not None and password is None):
         raise ValueError("Username and password must be provided together.")
 
@@ -119,10 +119,13 @@ async def main(file_path: str, file_encoding: str, index: str, host: str, port: 
     if file_path.endswith('.csv') and not generate_action:
         raise ValueError("Actions must be generated for CSV file.")
 
+    if ca_cert is not None and not use_ssl:
+        raise ValueError("CA certificate can only be used with HTTPS.")
+
     es = AsyncElasticsearch(
         host=host,
         port=port,
-        use_ssl=True,
+        use_ssl=use_ssl,
         http_auth=(username, password) if username and password else None,
         ca_certs=ca_cert
     )
@@ -138,13 +141,14 @@ if __name__ == '__main__':
     parser.add_argument('--port', default=9200, type=int, help='Elasticsearch port (default: 9200)')
     parser.add_argument('-u', '--username', default=None, help='Username for authentication')
     parser.add_argument('-p', '--password', default=None, help='Password for authentication')
+    parser.add_argument('--insecure', action='store_true', help='Use plain HTTP instead of HTTPS')
     parser.add_argument('--ca-cert', default=None, help='Path to the CA certificate file')
     parser.add_argument('--pipeline', default=None, help='Name of the Elasticsearch pipeline')
-    parser.add_argument('--no-generate-action', action='store_false', help='Whether to generate action lines')
+    parser.add_argument('--no-generate-action', action='store_true', help='Whether to generate action lines')
     parser.add_argument('--id-field', default=None, type=str, help='Name of document ID field')
     parser.add_argument('-c', '--chunk_size', type=int, default=1000, help='Number of lines to process at once (default: 1000)')
     parser.add_argument('--dry-run', action='store_true', help='Print to stdout instead of sending to Elasticsearch')
     args = parser.parse_args()
 
-    asyncio.run(main(args.file_path, args.file_encoding, args.index, args.host, args.port, args.username, args.password, args.ca_cert,
-                     args.no_generate_action, args.id_field, args.pipeline, args.chunk_size, args.dry_run))
+    asyncio.run(main(args.file_path, args.file_encoding, args.index, args.host, args.port, args.username, args.password, not args.insecure, args.ca_cert,
+                     not args.no_generate_action, args.id_field, args.pipeline, args.chunk_size, args.dry_run))
