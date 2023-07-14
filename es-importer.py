@@ -14,16 +14,16 @@ from aiocsv import AsyncDictReader
 from elasticsearch import AsyncElasticsearch
 from typing import Any, AsyncIterator, List
 
-async def read_lines(file_path: str, file_encoding: str) -> AsyncIterator[str]:
+async def read_lines(file_path: str, encoding: str) -> AsyncIterator[str]:
     supported_extensions = ['.gz', '.bz2', '.zip', '.xz']
     file_extension = file_path[file_path.rfind('.'):].lower()
 
     if file_path == '-':
-        async with aiofiles.open(sys.stdin.readline, 'r', encoding=file_encoding) as stdin:
+        async with aiofiles.open(sys.stdin.readline, 'r', encoding=encoding) as stdin:
             async for line in stdin:
                 yield line.strip()
     if file_extension in ('.json', '.jsonl'):
-        async with aiofiles.open(file_path, 'r', encoding=file_encoding) as file:
+        async with aiofiles.open(file_path, 'r', encoding=encoding) as file:
             async for line in file:
                 yield line.strip()
     elif file_extension in supported_extensions:
@@ -36,7 +36,7 @@ async def read_lines(file_path: str, file_encoding: str) -> AsyncIterator[str]:
         opener = opener_map.get(file_extension)
         if opener:
             with io.open(file_path, 'rb') as file:
-                with opener(file, 'rt', encoding=file_encoding) as decompressed_file:
+                with opener(file, 'rt', encoding=encoding) as decompressed_file:
                     for line in decompressed_file:
                         yield line.strip()
     else:
