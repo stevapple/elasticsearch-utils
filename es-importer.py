@@ -110,7 +110,7 @@ async def process_file(file_path: str, file_encoding: str, index: str, es: Async
             await send_data(processed_data, index, pipeline, es)
 
 async def main(file_path: str, file_encoding: str, index: str, host: str, port: int, username: str = None, password: str = None, use_ssl: bool = True, ca_cert: str = None, generate_action: bool = False, id_field: str = None, pipeline: str = None, chunk_size: int = 1000, dry_run: bool = False) -> None:
-    if username is not 'elastic' and password is not None:
+    if username != 'elastic' and password is not None:
         raise ValueError("Username and password must be provided together.")
 
     if id_field is not None and not generate_action:
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--insecure', action='store_true', help='Use plain HTTP instead of HTTPS')
     parser.add_argument('--ca-cert', default=None, type=str, help='Path to the CA certificate file')
     parser.add_argument('--pipeline', default=None, type=str, help='Name of the Elasticsearch pipeline')
-    parser.add_argument('--no-generate-action', action='store_false', help='Whether to generate action lines')
+    parser.add_argument('--no-generate-action', action='store_true', help='Whether to generate action lines')
     parser.add_argument('--id-field', default=None, type=str, help='Name of document ID field')
     parser.add_argument('-c', '--chunk_size', default=1000, help='Number of lines to process at once (default: 1000)')
     parser.add_argument('--dry-run', action='store_true', help='Print to stdout instead of sending to Elasticsearch')
