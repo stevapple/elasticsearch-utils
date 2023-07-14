@@ -68,7 +68,7 @@ async def process_results(results: AsyncIterator[dict], post_process: str, encod
 async def main(query_file: str, post_process: str, output_file: str, full: bool, encoding: str,
                host: str, port: int, username: str, password: str, use_ssl: bool, ca_cert: str,
                chunk_size: int, index: str = None) -> None:
-    if username is not 'elastic' and password is not None:
+    if username != 'elastic' and password is not None:
         raise ValueError("Username and password must be provided together.")
 
     if ca_cert is not None and not use_ssl:
