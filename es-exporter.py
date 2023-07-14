@@ -66,16 +66,16 @@ async def process_results(results: AsyncIterator[dict], post_process: str, encod
             output_target.close()
 
 async def main(query_file: str, post_process: str, output_file: str, full: bool, encoding: str,
-               host: str, port: int, username: str, password: str, ca_cert: str, chunk_size: int,
-               index: str = None) -> None:
-    
+               host: str, port: int, username: str, password: str, use_ssl: bool, ca_cert: str,
+               chunk_size: int, index: str = None) -> None:
+
     http_auth = (username, password) if username and password else None
 
     # Create Elasticsearch client
     es = AsyncElasticsearch(
         host=host,
         port=port,
-        use_ssl=True,
+        use_ssl=use_ssl,
         http_auth=http_auth,
         ca_certs=ca_cert
     )
@@ -96,6 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--port', default=9200, type=int, help='Elasticsearch port (default: 9200)')
     parser.add_argument('-u', '--username', default=None, help='Username for authentication')
     parser.add_argument('-p', '--password', default=None, help='Password for authentication')
+    parser.add_argument('--insecure', action='store_false', help='Use plain HTTP instead of HTTPS')
     parser.add_argument('--ca-cert', default=None, help='Path to the CA certificate file')
     parser.add_argument('--chunk-size', type=int, default=1000, help='Number of documents to process at once (default: 1000)')
     parser.add_argument('-i', '--index', help='Specify the Elasticsearch index', default=None)
@@ -111,6 +112,7 @@ if __name__ == '__main__':
         args.port,
         args.username,
         args.password,
+        args.insecure,
         args.ca_cert,
         args.chunk_size,
         args.index
