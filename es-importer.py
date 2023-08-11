@@ -16,6 +16,7 @@ from elastic_transport._models import DEFAULT
 from elasticsearch import AsyncElasticsearch
 from typing import Any, AsyncIterator, List
 
+
 async def read_lines(file_path: str, encoding: str) -> AsyncIterator[str]:
     supported_extensions = ['.gz', '.bz2', '.zip', '.xz']
     file_extension = file_path[file_path.rfind('.'):].lower()
@@ -42,18 +43,23 @@ async def read_lines(file_path: str, encoding: str) -> AsyncIterator[str]:
                     for line in decompressed_file:
                         yield line.strip()
     else:
-        raise ValueError("Unsupported file type. Only .csv, .json, .jsonl, .gz, .bz2, .zip, and .xz files are supported.")
+        raise ValueError(
+            "Unsupported file type. Only .csv, .json, .jsonl, .gz, .bz2, .zip, and .xz files are supported.")
+
 
 async def read_jsonl(file_path: str, file_encoding: str) -> AsyncIterator[dict]:
     async for line in read_lines(file_path, encoding=file_encoding):
         yield json.loads(line)
+
 
 async def read_csv(file_path: str, file_encoding: str) -> AsyncIterator[dict[str, str]]:
     async with aiofiles.open(file_path, 'r', encoding=file_encoding) as file:
         async for row in AsyncDictReader(file, quoting=csv.QUOTE_NONNUMERIC):
             yield row
 
-async def process_stream(file_path: str, file_encoding: str, generate_action: bool, id_field: str) -> AsyncIterator[List[str]]:
+
+async def process_stream(file_path: str, file_encoding: str, generate_action: bool,
+                         id_field: str) -> AsyncIterator[List[str]]:
     reader = read_csv if file_path.endswith('.csv') else read_jsonl
     async for obj in reader(file_path, file_encoding):
         if generate_action:
@@ -64,7 +70,7 @@ async def process_stream(file_path: str, file_encoding: str, generate_action: bo
                 for key in keypath:
                     id = id[key]
             yield [
-                process_action({ 'index' : {} }, id),
+                process_action({'index': {}}, id),
                 json.dumps(obj)
             ]
         else:
@@ -72,6 +78,7 @@ async def process_stream(file_path: str, file_encoding: str, generate_action: bo
                 yield [process_action(obj)]
             else:
                 yield [json.dumps(obj)]
+
 
 def process_action(obj: dict[str, Any], id: str = None) -> str:
     # Remove "_type" field from index action
@@ -81,6 +88,7 @@ def process_action(obj: dict[str, Any], id: str = None) -> str:
     if id is not None:
         obj['index']['_id'] = id
     return json.dumps(obj)
+
 
 async def process_data(data: AsyncIterator[List[str]], chunk_size: int) -> AsyncIterator[List[str]]:
     processed_data = []
@@ -92,6 +100,7 @@ async def process_data(data: AsyncIterator[List[str]], chunk_size: int) -> Async
     if processed_data:
         yield processed_data
 
+
 async def send_data(data: List[str], index: str, pipeline: str, es: AsyncElasticsearch) -> None:
     actions = []
     for line in data:
@@ -99,7 +108,9 @@ async def send_data(data: List[str], index: str, pipeline: str, es: AsyncElastic
 
     await es.bulk(body=actions, index=index, pipeline=pipeline)
 
-async def process_file(file_path: str, file_encoding: str, index: str, es: AsyncElasticsearch, generate_action: bool, id_field: str | None, pipeline: str, chunk_size: int, dry_run: bool = False) -> None:
+
+async def process_file(file_path: str, file_encoding: str, index: str, es: AsyncElasticsearch, generate_action: bool,
+                       id_field: str | None, pipeline: str, chunk_size: int, dry_run: bool = False) -> None:
     data = process_stream(file_path, file_encoding, generate_action, id_field)
     async for processed_data in process_data(data, chunk_size):
         if dry_run:
@@ -111,15 +122,18 @@ async def process_file(file_path: str, file_encoding: str, index: str, es: Async
         else:
             await send_data(processed_data, index, pipeline, es)
 
-async def main(file_path: str, file_encoding: str, index: str, host: str, port: int, username: str = None, password: str = None, use_ssl: bool = True, ca_cert: str = None, generate_action: bool = False, id_field: str = None, pipeline: str = None, chunk_size: int = 1000, dry_run: bool = False) -> None:
-    if username != 'elastic' and password is not None:
-        raise ValueError("Username and password must be provided together.")
 
+async def main(file_path: str, file_encoding: str, index: str, host: str, port: int, username: str = None,
+               password: str = None, use_ssl: bool = True, ca_cert: str = None, generate_action: bool = False,
+               id_field: str = None, pipeline: str = None, chunk_size: int = 1000, dry_run: bool = False) -> None:
     if id_field is not None and not generate_action:
         raise ValueError("ID field can only be applied to generated actions.")
 
     if file_path.endswith('.csv') and not generate_action:
         raise ValueError("Actions must be generated for CSV file.")
+
+    if username != 'elastic' and password is not None:
+        raise ValueError("Username and password must be provided together.")
 
     if ca_cert is not None and not use_ssl:
         raise ValueError("CA certificate can only be used with HTTPS.")
@@ -133,6 +147,7 @@ async def main(file_path: str, file_encoding: str, index: str, host: str, port: 
     )
     await process_file(file_path, file_encoding, index, es, generate_action, id_field, pipeline, chunk_size, dry_run)
     await es.close()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Read, process and send data to Elasticsearch')
@@ -152,5 +167,6 @@ if __name__ == '__main__':
     parser.add_argument('--dry-run', action='store_true', help='Print to stdout instead of sending to Elasticsearch')
     args = parser.parse_args()
 
-    asyncio.run(main(args.file_path, args.file_encoding, args.index, args.host, args.port, args.username, args.password, not args.insecure, args.ca_cert,
+    asyncio.run(main(args.file_path, args.file_encoding, args.index, args.host, args.port, args.username, args.password,
+                     not args.insecure, args.ca_cert,
                      not args.no_generate_action, args.id_field, args.pipeline, args.chunk_size, args.dry_run))

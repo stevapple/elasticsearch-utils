@@ -10,6 +10,7 @@ from elastic_transport._models import DEFAULT
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_scan
 
+
 async def process_query(query_file: str, es: AsyncElasticsearch, chunk_size: int, index: str) -> AsyncIterator[dict]:
     if query_file == '-':
         query_source = sys.stdin
@@ -19,16 +20,17 @@ async def process_query(query_file: str, es: AsyncElasticsearch, chunk_size: int
     try:
         query = json.load(query_source)
         async for result in async_scan(
-            es,
-            query=query,
-            scroll='20m',
-            size=chunk_size,
-            index=index
+                es,
+                query=query,
+                scroll='20m',
+                size=chunk_size,
+                index=index
         ):
             yield result
     finally:
         if query_file != '-':
             query_source.close()
+
 
 async def post_process_document(document: dict, command: str, encoding: str) -> str:
     proc = await asyncio.create_subprocess_shell(
@@ -48,6 +50,7 @@ async def post_process_document(document: dict, command: str, encoding: str) -> 
     output = output_bytes.decode(encoding).strip()
     return output
 
+
 async def process_results(results: AsyncIterator[dict], post_process: str, encoding: str,
                           output_file: str, full: bool) -> None:
     output_target = sys.stdout if output_file is None else open(output_file, 'w', encoding=encoding)
@@ -66,6 +69,7 @@ async def process_results(results: AsyncIterator[dict], post_process: str, encod
     finally:
         if output_file is not None:
             output_target.close()
+
 
 async def main(query_file: str, post_process: str, output_file: str, full: bool, encoding: str,
                host: str, port: int, username: str, password: str, use_ssl: bool, ca_cert: str,
@@ -90,10 +94,12 @@ async def main(query_file: str, post_process: str, output_file: str, full: bool,
 
     await es.close()
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Query, process and save data from Elasticsearch')
     parser.add_argument('query_file', type=str, help='Path to the query file. Use - for stdin.')
-    parser.add_argument('--post-process', default=None, type=str, help='Specify a command for post-processing each document')
+    parser.add_argument('--post-process', default=None, type=str,
+                        help='Specify a command for post-processing each document')
     parser.add_argument('-o', '--out', default=None, type=str, help='Specify the output file')
     parser.add_argument('--full', action='store_true', help='Include the full document')
     parser.add_argument('--file-encoding', default='utf-8', help='Specify the encoding for file output')
