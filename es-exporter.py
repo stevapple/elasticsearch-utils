@@ -6,6 +6,7 @@ import subprocess
 import sys
 from typing import AsyncIterator
 from elastic_transport import NodeConfig
+# noinspection PyProtectedMember
 from elastic_transport._models import DEFAULT
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_scan
@@ -51,8 +52,8 @@ async def post_process_document(document: dict, command: str, encoding: str) -> 
     return output
 
 
-async def process_results(results: AsyncIterator[dict], post_process: str, encoding: str,
-                          output_file: str, full: bool) -> None:
+async def process_results(results: AsyncIterator[dict], post_process: str, encoding: str,  output_file: str,
+                          full: bool) -> None:
     output_target = sys.stdout if output_file is None else open(output_file, 'w', encoding=encoding)
 
     try:

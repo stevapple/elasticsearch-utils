@@ -12,6 +12,7 @@ import sys
 import csv
 from aiocsv import AsyncDictReader
 from elastic_transport import NodeConfig
+# noinspection PyProtectedMember
 from elastic_transport._models import DEFAULT
 from elasticsearch import AsyncElasticsearch
 from typing import Any, AsyncIterator, List
@@ -63,14 +64,14 @@ async def process_stream(file_path: str, file_encoding: str, generate_action: bo
     reader = read_csv if file_path.endswith('.csv') else read_jsonl
     async for obj in reader(file_path, file_encoding):
         if generate_action:
-            id = None
+            document_id = None
             if id_field is not None:
                 keypath = id_field.split('.')
-                id = obj
+                document_id = obj
                 for key in keypath:
-                    id = id[key]
+                    document_id = document_id[key]
             yield [
-                process_action({'index': {}}, id),
+                process_action({'index': {}}, document_id),
                 json.dumps(obj)
             ]
         else:
@@ -80,13 +81,13 @@ async def process_stream(file_path: str, file_encoding: str, generate_action: bo
                 yield [json.dumps(obj)]
 
 
-def process_action(obj: dict[str, Any], id: str = None) -> str:
+def process_action(obj: dict[str, Any], document_id: str = None) -> str:
     # Remove "_type" field from index action
     # This is deprecated in ES 7.0 and removed in 8.0
     obj['index'].pop('_type', None)
     # Add ID field
     if id is not None:
-        obj['index']['_id'] = id
+        obj['index']['_id'] = document_id
     return json.dumps(obj)
 
 
