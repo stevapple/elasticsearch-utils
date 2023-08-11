@@ -11,6 +11,8 @@ import io
 import sys
 import csv
 from aiocsv import AsyncDictReader
+from elastic_transport import NodeConfig
+from elastic_transport._models import DEFAULT
 from elasticsearch import AsyncElasticsearch
 from typing import Any, AsyncIterator, List
 
@@ -19,7 +21,7 @@ async def read_lines(file_path: str, encoding: str) -> AsyncIterator[str]:
     file_extension = file_path[file_path.rfind('.'):].lower()
 
     if file_path == '-':
-        async with aiofiles.open(sys.stdin.readline, 'r', encoding=encoding) as stdin:
+        async with aiofiles.open(sys.stdin.fileno(), 'r', encoding=encoding) as stdin:
             async for line in stdin:
                 yield line.strip()
     if file_extension in ('.json', '.jsonl'):
@@ -97,7 +99,7 @@ async def send_data(data: List[str], index: str, pipeline: str, es: AsyncElastic
 
     await es.bulk(body=actions, index=index, pipeline=pipeline)
 
-async def process_file(file_path: str, file_encoding: str, index: str, es: AsyncElasticsearch, generate_action: bool, id_field: str, pipeline: str, chunk_size: int, dry_run: bool = False) -> None:
+async def process_file(file_path: str, file_encoding: str, index: str, es: AsyncElasticsearch, generate_action: bool, id_field: str | None, pipeline: str, chunk_size: int, dry_run: bool = False) -> None:
     data = process_stream(file_path, file_encoding, generate_action, id_field)
     async for processed_data in process_data(data, chunk_size):
         if dry_run:
@@ -123,11 +125,11 @@ async def main(file_path: str, file_encoding: str, index: str, host: str, port: 
         raise ValueError("CA certificate can only be used with HTTPS.")
 
     es = AsyncElasticsearch(
-        host=host,
-        port=port,
-        use_ssl=use_ssl,
+        hosts=[
+            NodeConfig(scheme='https' if use_ssl else 'http', host=host, port=port)
+        ],
         http_auth=(username, password) if username and password else None,
-        ca_certs=ca_cert
+        ca_certs=ca_cert if ca_cert is not None else DEFAULT
     )
     await process_file(file_path, file_encoding, index, es, generate_action, id_field, pipeline, chunk_size, dry_run)
     await es.close()
