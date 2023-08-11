@@ -72,19 +72,16 @@ async def process_results(results: AsyncIterator[dict], post_process: str, encod
 
 
 async def main(query_file: str, post_process: str, output_file: str, full: bool, encoding: str,
-               host: str, port: int, username: str, password: str, use_ssl: bool, ca_cert: str,
+               scheme: str, host: str, port: int, username: str, password: str, ca_cert: str,
                chunk_size: int, index: str = None) -> None:
     if username != 'elastic' and password is not None:
         raise ValueError("Username and password must be provided together.")
 
-    if ca_cert is not None and not use_ssl:
+    if ca_cert is not None and scheme != 'https':
         raise ValueError("CA certificate can only be used with HTTPS.")
 
-    # Create Elasticsearch client
     es = AsyncElasticsearch(
-        hosts=[
-            NodeConfig(scheme='https' if use_ssl else 'http', host=host, port=port)
-        ],
+        hosts=[NodeConfig(scheme=scheme, host=host, port=port)],
         http_auth=(username, password) if username and password else None,
         ca_certs=ca_cert if ca_cert is not None else DEFAULT
     )
@@ -103,11 +100,11 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--out', default=None, type=str, help='Specify the output file')
     parser.add_argument('--full', action='store_true', help='Include the full document')
     parser.add_argument('--file-encoding', default='utf-8', help='Specify the encoding for file output')
+    parser.add_argument('--scheme', default='https', help='Elasticsearch HTTP scheme (default: https)')
     parser.add_argument('--host', default='localhost', help='Elasticsearch host (default: localhost)')
     parser.add_argument('--port', default=9200, help='Elasticsearch port (default: 9200)')
     parser.add_argument('-u', '--username', default='elastic', help='Username for authentication')
     parser.add_argument('-p', '--password', default=None, type=str, help='Password for authentication')
-    parser.add_argument('--insecure', action='store_true', help='Use plain HTTP instead of HTTPS')
     parser.add_argument('--ca-cert', default=None, type=str, help='Path to the CA certificate file')
     parser.add_argument('--chunk-size', default=1000, help='Number of documents to process at once (default: 1000)')
     parser.add_argument('-i', '--index', default=None, type=str, help='Specify the Elasticsearch index')
@@ -119,11 +116,11 @@ if __name__ == '__main__':
         args.out,
         args.full,
         args.file_encoding,
+        args.scheme,
         args.host,
         args.port,
         args.username,
         args.password,
-        not args.insecure,
         args.ca_cert,
         args.chunk_size,
         args.index
