@@ -5,6 +5,8 @@ import json
 import subprocess
 import sys
 from typing import AsyncIterator
+from elastic_transport import NodeConfig
+from elastic_transport._models import DEFAULT
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_scan
 
@@ -76,11 +78,11 @@ async def main(query_file: str, post_process: str, output_file: str, full: bool,
 
     # Create Elasticsearch client
     es = AsyncElasticsearch(
-        host=host,
-        port=port,
-        use_ssl=use_ssl,
+        hosts=[
+            NodeConfig(scheme='https' if use_ssl else 'http', host=host, port=port)
+        ],
         http_auth=(username, password) if username and password else None,
-        ca_certs=ca_cert
+        ca_certs=ca_cert if ca_cert is not None else DEFAULT
     )
 
     results = process_query(query_file, es, chunk_size, index)
