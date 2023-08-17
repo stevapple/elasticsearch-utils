@@ -104,7 +104,7 @@ if __name__ == '__main__':
     parser.add_argument('--scheme', default='https', help='Elasticsearch HTTP scheme (default: https)')
     parser.add_argument('--host', default='localhost', help='Elasticsearch host (default: localhost)')
     parser.add_argument('--port', default=9200, help='Elasticsearch port (default: 9200)')
-    parser.add_argument('-u', '--username', default='elastic', help='Username for authentication')
+    parser.add_argument('-u', '--username', default='elastic', help='Username for authentication (default: elastic)')
     parser.add_argument('-p', '--password', default=None, type=str, help='Password for authentication')
     parser.add_argument('--ca-cert', default=None, type=str, help='Path to the CA certificate file')
     parser.add_argument('--chunk-size', default=1000, help='Number of documents to process at once (default: 1000)')
