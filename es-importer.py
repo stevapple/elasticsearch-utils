@@ -141,7 +141,7 @@ async def main(file_path: str, file_encoding: str, index: str, scheme: str, host
 
     es = AsyncElasticsearch(
         hosts=[NodeConfig(scheme=scheme, host=host, port=port)],
-        http_auth=(username, password) if username and password else None,
+        basic_auth=(username, password) if username and password else None,
         ca_certs=ca_cert if ca_cert is not None else DEFAULT
     )
     await process_file(file_path, file_encoding, index, es, generate_action, id_field, pipeline, chunk_size, dry_run)
