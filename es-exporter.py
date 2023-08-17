@@ -83,7 +83,7 @@ async def main(query_file: str, post_process: str, output_file: str, full: bool,
 
     es = AsyncElasticsearch(
         hosts=[NodeConfig(scheme=scheme, host=host, port=port)],
-        http_auth=(username, password) if username and password else None,
+        basic_auth=(username, password) if username and password else None,
         ca_certs=ca_cert if ca_cert is not None else DEFAULT
     )
 

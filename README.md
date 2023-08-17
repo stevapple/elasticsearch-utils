@@ -67,5 +67,4 @@ options:
                         Number of documents to process at once (default: 1000)
   -i INDEX, --index INDEX
                         Specify the Elasticsearch index
-
 ```
